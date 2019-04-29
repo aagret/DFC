@@ -1,4 +1,4 @@
-"","Port","Date","Ticker","Amount","Cost","FxCost"
+"","Port","Date","Ticker","Amount","Price","FxCost"
 "1","DF Equity",2018-11-02,"EUR Curncy",23316974.75,1,1
 "2","DF Equity",2018-11-05,"ABBN SW Equity",25700,20.49464,0.872654
 "3","DF Equity",2018-11-05,"AD NA Equity",22800,20.45862,1
@@ -167,3 +167,5 @@
 "166","DF Equity",2018-11-09,"VOW3 Gr Equity",1400,155.39,1
 "167","DF Equity",2018-11-09,"WPP LN Equity",22300,905,1.14442
 "168","DF Equity",2018-11-09,"XOM US Equity",6500,81.95,0.87811
+"999","DF Equity",2018-11-07,".EFAFEES LX Equity",-1,-43000,1
+
