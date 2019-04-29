@@ -7,7 +7,7 @@ library(zoo)
 
 
 #load functions
-source("./R/scriptFunctions.R")
+source("~/R-Projects/DFE/R/scriptFunctions.R")
 
 
 # get kbl downloaded files
@@ -39,9 +39,8 @@ uploadBBU <- formatBBU(secPos, allCash)
 
 
 # add positions before auto upload 
-oldPos <- fread("/home/artha/R-Projects/DFE/Config/positionsBeforeAutoUpload.csv")[,-c(1, 6, 7)]
-oldPos[, ':=' (Price=0,
-               Date= as.Date(Date, format="%Y-%m-%d"))]
+oldPos <- fread("/home/artha/R-Projects/DFE/Config/positionsBeforeAutoUpload.csv")[,-c(1, 7)]
+oldPos[,  Date:= as.Date(Date, format="%Y-%m-%d")]
 
 uploadBBU  <- rbind(uploadBBU, oldPos)
 
