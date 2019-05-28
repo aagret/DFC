@@ -31,6 +31,7 @@ nav <- getNavData(fileList)
 accruedFees <- getAccruedFees(nav)
 
 pendingDiv <- getPendingDiv(nav)
+pendingDiv <- unique(pendingDiv)
 
 # get details of all cash movements
 allCash <- getAllCash(cashPos, cashMvmt, accruedFees, pendingDiv)
