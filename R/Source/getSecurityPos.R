@@ -16,6 +16,7 @@ getSecurityPos <- function(fileList= fileList) {
                Date= as.Date(Date, "%Y-%m-%d"),
                Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]
     
+    db <- db[Isin != "SE0012455681", ]
     
     db <- addTicker(db)
     
