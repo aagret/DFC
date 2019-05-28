@@ -14,7 +14,8 @@ source("~/R-Projects/DFE/R/scriptFunctions.R")
 setwd("/home/artha/kbl")
 fileList <- list.files()
 
-cashMvmt <- getCashMvmt(fileList) 
+cashMvmt <- getCashMvmt(fileList)
+cashMvmt <- unique(cashMvmt)
 
 cashPos  <- getCashPos(fileList)
 
@@ -43,6 +44,25 @@ oldPos <- fread("/home/artha/R-Projects/DFE/Config/positionsBeforeAutoUpload.csv
 oldPos[,  Date:= as.Date(Date, format="%Y-%m-%d")]
 
 uploadBBU  <- rbind(uploadBBU, oldPos)
+
+setkey(uploadBBU, Date)
+
+# add missing datas
+missingDt <- unique(allCash[!Date %in% unique(secPos$Date), Date])
+
+add <- ldply(missingDt, function(x) {
+    dt <- uploadBBU[Date < as.Date(x), max(unique(Date))]
+    db <- secPos[Date == dt,]
+    db[, ':=' (Date= as.Date(x),
+               Price= numeric(),
+               Ccy= NULL,
+               Isin= NULL,
+               Description=NULL)]
+    }
+    )
+
+uploadBBU <- rbind(uploadBBU, add)
+
 
 # save file
 fwrite(uploadBBU, file="/home/artha/R-Projects/DFE/upload/positionsDFE.csv")
