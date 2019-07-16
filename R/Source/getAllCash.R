@@ -9,7 +9,9 @@ getAllCash <- function(db= db1, ...){
     
     setkey(db, Date)
     
-    nonCum <- c("NetDividend", "PaidFees", "PendingDividend", "PaidInterest", "SubRed",  "Wh_Tax")
+    nonCum <- c("NetDividend", "PaidFees", "PendingDividend", "PaidInterest", 
+                "SubRed",  "Wh_Tax")
+    
     db[, (nonCum):= lapply(.SD, function(x){ x[is.na(x)] <-0; x }), .SDcols= nonCum]
     
     cum <- colnames(db)[!colnames(db) %in% nonCum]
@@ -29,7 +31,7 @@ getAllCash <- function(db= db1, ...){
     db[, Fees:= cumsum(Fees), by= Ccy]
     
     # calc offset cash
-    db[, OffsetCash:= Cash - Tax - Fees, by= Ccy]
+    db[, OffsetCash:= Cash - Tax - Fees + AccruedFees + PendingDividend , by= Ccy]
     
     
     return(db)
