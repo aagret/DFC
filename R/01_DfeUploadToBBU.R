@@ -21,6 +21,9 @@ cashPos  <- getCashPos(fileList)
 
 secPos   <- getSecurityPos(fileList)
 
+# adapt to kbl "error"
+secPos[grep("DJ STOXX 600 FUTURE", Description), Amount:=Amount / 50]
+
 
 # get NAV datas
 setwd("/home/Alexandre/DFE_Nav_csv")
