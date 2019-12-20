@@ -8,6 +8,16 @@ addTicker <- function(db= secPos) {
     setDT(tickers, key= c("Isin", "Ticker"))
     setkey(db, Isin)
     
+    #check if new Isin !TODO!
+    new <- unique(db$Isin[!db$Isin %in% tickers$Isin])
+    
+    if(length(new) != 0)  {
+        new <-list(new)
+        
+        system("echo 'Subject: DFE alert\rnew security in the fund' | sendmail aagret@arthafinance.ch")
+        
+    }
+    
     db <- tickers[db]
     
 }
