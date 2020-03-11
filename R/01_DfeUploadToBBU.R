@@ -22,7 +22,7 @@ cashPos  <- getCashPos(fileList)
 secPos   <- getSecurityPos(fileList)
 
 # adapt to kbl "error"
-secPos[grep("DJ STOXX 600 FUTURE", Description), Amount:=Amount / 50]
+secPos[grep("DJ STOXX 600 FUTURE|S&P 500 E-MINI FUT", Description), Amount:=Amount / 50]
 
 
 # get NAV datas
