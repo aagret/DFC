@@ -5,7 +5,9 @@ getAllCash <- function(db= db1, ...){
     argg <- c(as.list(environment()), list(...))
     
     db <- setDT(ldply(argg))
-    db <- dcast(db, Date + Ccy ~Type , value.var= "Amount")
+    db <- dcast(db, Date + Ccy ~Type ,
+                #fun.aggregate = sum,
+                value.var= "Amount")
     
     setkey(db, Date)
     
@@ -21,8 +23,9 @@ getAllCash <- function(db= db1, ...){
     db[is.na(db)] <- 0
     
     # calc all taxes
-    db[, Tax:= diff(c(0, PendingWh_Tax)), by= Ccy]
-    db[, Tax:= min(0, Tax), by= .(Ccy, Date)]
+    db[, Tax:= na.locf( PendingWh_Tax), by= .(Ccy)]
+    db[, Tax:= diff(c(0, PendingWh_Tax)), by= .(Ccy)]
+    db[, Tax:= min(0, Tax), by= .(Date, Ccy)]
     db[, Tax:= cumsum(Tax), by= Ccy]
     
     # calc all Fees
@@ -31,7 +34,7 @@ getAllCash <- function(db= db1, ...){
     db[, Fees:= cumsum(Fees), by= Ccy]
     
     # calc offset cash
-    db[, OffsetCash:= Cash - Tax - Fees + AccruedFees + PendingDividend , by= Ccy]
+    db[, OffsetCash:= Cash - Tax - Fees + AccruedFees + PendingDividend + Margin, by= Ccy]
     
     
     return(db)
