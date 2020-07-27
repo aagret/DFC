@@ -19,17 +19,14 @@ cashMvmt <- unique(cashMvmt)
 
 cashPos  <- getCashPos(fileList)
 
-secPos   <- getSecurityPos(fileList)
-
-# adapt to kbl "error"
-secPos[grep("DJ STOXX 600 FUTURE|S&P 500 E-MINI FUT", Description), Amount:=Amount / 50]
-
-
 # get NAV datas
 setwd("/home/Alexandre/DFE_Nav_csv")
 fileList <- list.files()
 
 nav <- getNavData(fileList)
+
+margin <- nav[grep("AC", Code), .(Port, Date, Type, Ccy, Amount) ]
+margin$Type <- "Margin"
 
 accruedFees <- getAccruedFees(nav)
 
@@ -37,37 +34,74 @@ pendingDiv <- getPendingDiv(nav)
 pendingDiv <- unique(pendingDiv)
 
 # get details of all cash movements
-allCash <- getAllCash(cashPos, cashMvmt, accruedFees, pendingDiv)
+allCash <- getAllCash(cashPos, cashMvmt, accruedFees, pendingDiv, margin)
+
+
+###############################################
+
+#get pos from trades
+setwd("/home/Alexandre/DFEquity_Trades")
+library(openxlsx)
+
+posFromTrade <- read.xlsx("DFE_Trades.xlsx","Sheet1",
+                          #stringsAsFactors=FALSE,
+                          skipEmptyRows = TRUE)
+
+setDT(posFromTrade)
+
+posFromTrade <- posFromTrade[, .(Portfolio.Name, Execution.Date, Type, Security.ID, Quantity)]
+colnames(posFromTrade) <- c("Port", "Date", "Type", "Ticker", "Quantity")
+
+posFromTrade[, Date:=as.Date(as.character(Date), "%Y%m%d")]
+posFromTrade[Type == "Sell", Quantity:= -Quantity]
+
+posFromTrade[, Amount:= cumsum(Quantity), by= .(Ticker)]
+
+posFromTrade <- posFromTrade[, .(Port, Date, Ticker, Amount), ]
+
+setkey(posFromTrade, Date, Ticker)
+
+#pos <- posFromTrade[Date == min(Date), ]
+
+dts <- sort(unique(c(allCash$Date, posFromTrade$Date)))
+pos <- posFromTrade[Date == dts[1], ]
+
+for(dt in dts[-1]) {
+#for(dt in unique(posFromTrade$Date)[-1]) {
+  
+    new <- posFromTrade[Date == as.Date(dt), ]
+    
+    old <- pos[Date == max(pos[Date < as.Date(dt), Date]) & !Ticker %in% new$Ticker, ]
+  
+    old$Date <- as.Date(dt)
+    
+    new <- rbind(new , old)
+    
+    
+
+ #   new <- posFromTrade[Date == as.Date(dt), ]
+
+    #pos[Ticker %in% new$Ticker, Amount:=0, by=.(Date, Ticker)]
+        
+    pos <- rbind(pos,new)
+    
+    #pos[unique(pos[,.(Date, Ticker)]), mult= "last"]
+}
+
+pos <- pos[Amount != 0,]
+
+
+
+############################################################
 
 # format file for Bloomberg BBU
-uploadBBU <- formatBBU(secPos, allCash)
+uploadBBU <- formatBBU(pos, allCash)
 
 
-# add positions before auto upload 
-oldPos <- fread("/home/artha/R-Projects/DFE/Config/positionsBeforeAutoUpload.csv")[,-c(1, 7)]
-oldPos[,  Date:= as.Date(Date, format="%Y-%m-%d")]
-
-uploadBBU  <- rbind(uploadBBU, oldPos)
-
-setkey(uploadBBU, Date)
-
-# add missing datas
-missingDt <- unique(allCash[!Date %in% unique(secPos$Date), Date])
-
-add <- ldply(missingDt, function(x) {
-    dt <- uploadBBU[Date < as.Date(x), max(unique(Date))]
-    db <- secPos[Date == dt,]
-    db[, ':=' (Date= as.Date(x),
-               Price= numeric(),
-               Ccy= NULL,
-               Isin= NULL,
-               Description=NULL)]
-    }
-    )
-
-uploadBBU <- rbind(uploadBBU, add)
-
+#uploadBBU$Port <- "DF TEST"
 
 # save file
+
 fwrite(uploadBBU, file="/home/artha/R-Projects/DFE/upload/positionsDFE.csv")
+
 

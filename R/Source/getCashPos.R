@@ -15,11 +15,26 @@ getCashPos <- function(fileList= fileList) {
                Type= "Cash",
                Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]
     
-    setDT(db, Date)
+    db <- db[Date > as.Date("2020-07-15"), ]
     
-    db <- db[, sum(Amount), by= .(Port, Date, Type, Ccy)]
+
+    ## READ new historical file from 2018-11-02 to 2020-07-15
+    fileSelect <- fileList[grepl("HistoCashPositions", fileList)]
     
-    colnames(db)[5] <- "Amount"
+    
+    histo <- fread(fileSelect,select = c(1:4))
+    
+    colnames(histo) <- c("Port", "Date", "Ccy", "Amount")
+    
+    histo[, ':=' (Date= as.Date(Date, "%d.%m.%Y"),
+                  Type= "Cash"), ]
+    #,
+     #             Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]
+    
+    db <- rbind(histo,db)
+    
+    db <- db[, sum(Amount), by= .(Date, Type, Ccy)]
+    colnames(db)[4] <- "Amount"
     
     return(db)
     
