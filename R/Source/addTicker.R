@@ -14,7 +14,7 @@ addTicker <- function(db= secPos) {
     if(length(new) != 0)  {
         new <-list(new)
         
-        system("echo 'Subject: DFE alert\rnew security in the fund' | sendmail aagret@arthafinance.ch")
+        system("echo 'Subject: DFE alert\rnew security in the fund' | sendmail aagret@arthafinance.biz")
         
     }
     
