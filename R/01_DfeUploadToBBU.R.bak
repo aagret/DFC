@@ -1,0 +1,85 @@
+# extract datas from weekly NAV files and daily KBL files
+# format and export to Bloomberg for PORT analysis
+
+library(data.table)
+library(plyr)
+library(zoo)
+
+
+#load functions
+source("~/R-Projects/DFE/R/scriptFunctions.R")
+
+
+# get kbl downloaded files
+setwd("/home/artha/kbl")
+fileList <- list.files()
+
+cashMvmt <- getCashMvmt(fileList)
+cashMvmt <- unique(cashMvmt)
+
+cashPos  <- getCashPos(fileList)
+# fxFwd    <- getFxFwd(fileList)
+# fxFwd <- fxFwd[Amount < 0,]
+# fxFwd$Isin <- "FxFwd"
+# fxFwd$Ticker <- fxFwd$Description <- "USD/EUR R @2020/07/27 Curncy"
+# fxFwd$Type <- NULL
+
+# get pos from KBL
+secPos   <- getSecurityPos(fileList)
+secPos[grep("Index", Ticker), Amount:=Amount / 50] # adapt to kbl "error"
+
+#secPos <- rbind(secPos, fxFwd)
+
+
+# get NAV datas
+setwd("/home/Alexandre/DFE_Nav_csv")
+fileList <- list.files()
+
+nav <- getNavData(fileList)
+
+
+margin <- nav[grep("AC", Code), .(Port, Date, Type, Ccy, Amount) ]
+margin$Type <- "Margin"
+
+accruedFees <- getAccruedFees(nav)
+
+
+
+pendingDiv <- getPendingDiv(nav)
+pendingDiv <- unique(pendingDiv)
+
+# get details of all cash movements
+allCash <- getAllCash(cashPos, cashMvmt, accruedFees, pendingDiv, margin)
+
+# format file for Bloomberg BBU
+uploadBBU <- formatBBU(secPos, allCash)
+
+
+# add positions before auto upload 
+oldPos <- fread("/home/artha/R-Projects/DFE/Config/positionsBeforeAutoUpload.csv")[,-c(1, 7)]
+oldPos[,  Date:= as.Date(Date, format="%Y-%m-%d")]
+
+uploadBBU  <- rbind(uploadBBU, oldPos)
+
+setkey(uploadBBU, Date)
+
+# add missing datas
+missingDt <- unique(allCash[!Date %in% unique(secPos$Date), Date])
+
+add <- ldply(missingDt, function(x) {
+    dt <- uploadBBU[Date < as.Date(x), max(unique(Date))]
+    db <- secPos[Date == dt,]
+    db[, ':=' (Date= as.Date(x),
+               Price= numeric(),
+               Ccy= NULL,
+               Isin= NULL,
+               Description=NULL)]
+    }
+    )
+
+uploadBBU <- rbind(uploadBBU, add)
+
+
+# save file
+fwrite(uploadBBU, file="/home/artha/R-Projects/DFE/upload/positionsDFE.csv")
+
