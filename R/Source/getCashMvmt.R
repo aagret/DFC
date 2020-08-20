@@ -41,7 +41,7 @@ getCashMvmt <- function(fileList= fileList) {
     db <- rbind(db,kbl)
     
     db <- db[!Type %in% c("OEM", "OER", "OCS", "ORG", "OSD", "ODC", "OPF", "OEA",
-                          "BOC","CUS", "EMC", "MAF", "DCC", "DTC",
+                          "BOC","CUS", "EMC", "MAF", "DCC", "DTC", "DSC",
                           "MTM", "ICC", "TRI"),]
     
     db[Type == "IPC", Type:="PaidInterest"]
