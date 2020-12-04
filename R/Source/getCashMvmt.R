@@ -46,10 +46,10 @@ getCashMvmt <- function(fileList= fileList) {
     
     db[Type == "IPC", Type:="PaidInterest"]
     db[Type == "OCD", Type:="NetDividend"]
-    db[grep("Redemption", Name), Type:= "SubRed"]
-    db[grep("from|FROM|SCR", Name), Type:= "SubRed"]
-    db <- db[!Type %in% c("PaidInterest", "NetDividend", "SubRed"), 
-             Type:= "PaidFees"]
+    db[grep("Redemption R", Name), Type:= "SubRed"]
+    db[grep("from|FROM|SCR|TRF|trf", Name), Type:= "SubRed"]
+    db[!Type %in% c("PaidInterest", "NetDividend", "SubRed"), Type:= "PaidFees"]
+   # db <- db[Type != "PaidFees",]
     
     setDT(db, key= c("Date", "Ccy"))
     
