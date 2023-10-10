@@ -12,7 +12,7 @@ getCashMvmt <- function(fileList= fileList) {
     colnames(db) <- c("Port", "Ccy", "Type", "Ref", "Name", 
                       "Value", "Date", "Amount")
     
-    db[, ':=' (Port=  "DF EQUITY",
+    db[, ':=' (Port=  "DF Equity",
                Value= as.Date(Value, "%d.%m.%Y"),
                Date=  as.Date(Date,  "%d.%m.%Y")), ]
     
@@ -22,12 +22,12 @@ getCashMvmt <- function(fileList= fileList) {
     ##read daily KBL files
     fileSelect <- fileList[grepl("CshStmt_JRN", fileList)]
     kbl <- getData(fileSelect)[grep("EQUITY FUND", ClientName), 
-                             c(2, 6:11, 13)]
+                               c(2, 6:11, 13)]
     
     colnames(kbl) <- c("Port", "Ccy", "Type", "Ref", "Name", 
                       "Value", "Date", "Amount")
 
-    kbl[, ':=' (Port=  "DF EQUITY",
+    kbl[, ':=' (Port=  "DF Equity",
                Value= as.Date(Value, "%Y-%m-%d"),
                Date=  as.Date(Date,  "%Y-%m-%d"),
                Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]
@@ -46,18 +46,18 @@ getCashMvmt <- function(fileList= fileList) {
     
     db[Type == "IPC", Type:="PaidInterest"]
     db[Type == "OCD", Type:="NetDividend"]
-    db[grep("Redemption R", Name), Type:= "SubRed"]
-    db[grep("from|FROM|SCR|TRF|trf", Name), Type:= "SubRed"]
+    db[grep("Redemption|Subscription", Name), Type:= "SubRed"]
+    db[grep("from|FROM|SCR|TRF|trf|PrePmt|Rdm|Bal|Rev rdm", Name), Type:= "SubRed"]
     db[!Type %in% c("PaidInterest", "NetDividend", "SubRed"), Type:= "PaidFees"]
    # db <- db[Type != "PaidFees",]
     
     setDT(db, key= c("Date", "Ccy"))
     
-    db <- db[, sum(Amount), by= .(Date, Port, Ccy, Type)]
-    colnames(db)[5] <- "Amount"
+    db <- db[, sum(Amount), by= .(Date, Port, Ccy, Type, Name)]
+    colnames(db)[6] <- "Amount"
     
     # add whitholdding tax datas
-    tax <- calcPaidTax(db)
+    tax <- calcPaidTax(db)[,-7]
     
     db <- rbind(tax,db)
     
@@ -73,7 +73,7 @@ getCashMvmt <- function(fileList= fileList) {
 # colnames(db1) <- c("Port", "Ccy", "Type", "Ref", "Name", 
 #                   "Value", "Date", "Amount")
 # 
-# db1[, ':=' (Port=  "DF EQUITY",
+# db1[, ':=' (Port=  "DF Equity",
 #            Value= as.Date(Value, "%d.%m.%Y"),
 #            Date=  as.Date(Date,  "%d.%m.%Y")#,
 #            #Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))

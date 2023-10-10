@@ -6,10 +6,10 @@ getAllCash <- function(db= db1, ...){
     
     db <- setDT(ldply(argg))
     db <- dcast(db, Date + Ccy ~Type ,
-                #fun.aggregate = sum,
-                value.var= "Amount")
+                fun.aggregate = sum,
+                value.var= "Amount", fill=NA)
     
-    setkey(db, Date)
+    setkey(db, Date, Ccy)
     
     locf <- c("Cash", "AccruedFees", "PendingDividend", "PendingWh_Tax" )
     db[, (locf):= lapply(.SD, na.locf, na.rm=FALSE),
@@ -23,10 +23,10 @@ getAllCash <- function(db= db1, ...){
        by= Ccy,
        .SDcols= cum]
 
-    db[, CashInNav:=  Cash + AccruedFees + Margin, by= Ccy]
+    db[, CashInNav:=  Cash + Margin + AccruedFees + PendingDividend, by= Ccy]
     db[, TotTax:=     Wh_Tax, by= Ccy]
     db[, TotFees:=    AccruedFees + PaidFees, by= Ccy]
-    db[, OffsetCash:= CashInNav - TotTax - TotFees,   by= Ccy]
+    db[, OffsetCash:= CashInNav - TotTax - PaidFees,   by= Ccy]
 
     # carry over previous values
     dts <- unique(db$Date)

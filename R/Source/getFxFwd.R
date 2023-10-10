@@ -10,7 +10,7 @@ getFxFwd <- function(fileList= fileList) {
     
     colnames(db) <- c("Port", "Date", "Ccy", "Amount")
     
-    db[, ':=' (Port=  "DF EQUITY",
+    db[, ':=' (Port=  "DF Equity",
                Date= as.Date(Date, "%Y-%m-%d"),
                Type= "Cash",
                Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]

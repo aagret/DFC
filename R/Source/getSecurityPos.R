@@ -17,7 +17,7 @@ getSecurityPos <- function(fileList= fileList) {
     
     colnames(db) <- c("Port", "Date", "Amount", "Isin", "Description", "Ccy")
     
-    db[, ':=' (Port=  "DF EQUITY",
+    db[, ':=' (Port=  "DF Equity",
                Date= as.Date(Date, "%Y-%m-%d"),
                Amount= as.numeric(gsub(",", ".", gsub("\\.", "", Amount)))), ]
     
